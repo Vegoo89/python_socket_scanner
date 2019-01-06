@@ -44,13 +44,10 @@ class IP(Structure):
 
 # create a raw socket and bind it to the public interface
 if os.name == "nt":
-    socket_protocol = socket.IPPROTO_IP
+    sniffer = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_IP)
+    sniffer.bind((host, 0))
 else:
-    socket_protocol = socket.IPPROTO_ICMP
-
-sniffer = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket_protocol)
-
-sniffer.bind((host, 0))
+    sniffer = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
 
 # we want the IP headers included in the capture
 sniffer.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
