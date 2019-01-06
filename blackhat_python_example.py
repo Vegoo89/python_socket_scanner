@@ -60,6 +60,8 @@ sniffer.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
 if os.name == "nt":
     sniffer.ioctl(socket.SIO_RCVALL, socket.RCVALL_ON)
 
+global_ip_dict = dict()
+
 try:
     while True:
         # read in a single packet
@@ -68,7 +70,26 @@ try:
         # create an IP header from the first 20 bytes of the buffer
         ip_header = IP(raw_buffer[0:20])
 
+        if ip_header.src_address not in global_ip_dict:
+            try:
+                resolved_source = socket.gethostbyaddr(ip_header.src_address)
+                real_source = resolved_source[0]
+                global_ip_dict[ip_header.src_address] = real_source
+            except socket.herror:
+                print("Source ip can not be resolved: %s" % ip_header.src_address)
+                global_ip_dict[ip_header.src_address] = "Can't be resolved"
+
+        if ip_header.dst_address not in global_ip_dict:
+            try:
+                resolved_dest = socket.gethostbyaddr(ip_header.dst_address)
+                real_destination = resolved_dest[0]
+                global_ip_dict[ip_header.dst_address] = real_destination
+            except socket.herror:
+                print("Destination ip can not be resolved: %s" % ip_header.dst_address)
+                global_ip_dict[ip_header.dst_address] = "Can't be resolved"
+
         print("Protocol: %s %s -> %s" % (ip_header.protocol, ip_header.src_address, ip_header.dst_address))
+        print("%s -> %s" % (global_ip_dict[ip_header.src_address], global_ip_dict[ip_header.dst_address]))
 
 except KeyboardInterrupt:
     # if we're on Windows turn off promiscuous mode
